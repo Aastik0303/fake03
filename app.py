@@ -8,6 +8,7 @@ from tensorflow.keras.preprocessing import image
 
 from langchain.tools import Tool
 from langchain_groq import ChatGroq
+from langchain_core.tools import Tool
 from langgraph.prebuilt import create_react_agent
 from langchain_core.messages import HumanMessage, SystemMessage
 import cv2
