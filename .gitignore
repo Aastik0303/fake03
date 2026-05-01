@@ -1,0 +1,11 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Virtual environments (agar aapne banaya hai)
+venv/
+env/
+
+# Uploaded images (humein user ki images server par nahi bhejni)
+uploads/*
+!uploads/.gitkeep

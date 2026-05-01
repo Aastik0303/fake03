@@ -1,0 +1,11 @@
+Flask>=3.0.0
+Werkzeug>=3.0.0
+tensorflow-cpu>=2.15.0
+Pillow>=10.0.0
+opencv-python-headless>=4.8.0
+langchain>=0.1.0
+langchain-core>=0.1.10
+langchain-community>=0.0.10
+langchain-groq>=0.1.0
+numpy>=1.24.0
+gunicorn>=21.2.0
