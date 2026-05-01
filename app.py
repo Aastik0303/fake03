@@ -5,10 +5,11 @@ from flask import Flask, render_template, request, jsonify
 from werkzeug.utils import secure_filename
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
-from langchain.agents import AgentExecutor, create_react_agent
+
 from langchain.tools import Tool
 from langchain_groq import ChatGroq
-from langchain.prompts import PromptTemplate
+from langgraph.prebuilt import create_react_agent
+from langchain_core.messages import HumanMessage, SystemMessage
 import cv2
 from PIL import Image
 
