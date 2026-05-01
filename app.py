@@ -6,7 +6,6 @@ from werkzeug.utils import secure_filename
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 
-
 from langchain_groq import ChatGroq
 from langchain_core.tools import Tool
 from langgraph.prebuilt import create_react_agent
@@ -26,7 +25,8 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 # ============================
 # CNN MODEL LOADING
 # ============================
-MODEL_PATH = 'deepfake_detector_model.tflite'
+# Aapka model 'models' folder me hai isliye path update kar diya gaya hai
+MODEL_PATH = 'models/deepfake_detector_model.tflite'
 cnn_model = None
 
 def load_cnn_model():
@@ -161,9 +161,6 @@ deepfake_tool = Tool(
 )
 
 # ============================
-# REACT AGENT WITH GROQ
-# ============================
-# ============================
 # REACT AGENT WITH LANGGRAPH & GROQ
 # ============================
 def create_deepfake_agent():
@@ -196,14 +193,20 @@ When analyzing an image:
     )
     
     return agent_executor
-# Initialize agent
+
+# ============================
+# INITIALIZE AGENT WITH ERROR TRACKING
+# ============================
 agent_executor = None
+agent_error_message = "No error"
+
 try:
     agent_executor = create_deepfake_agent()
-    print("✓ LangChain ReAct agent initialized successfully")
+    print("✓ LangGraph ReAct agent initialized successfully")
 except Exception as e:
-    print(f"✗ Error initializing agent: {str(e)}")
-    print("  Make sure GROQ_API_KEY environment variable is set")
+    agent_error_message = str(e)
+    print(f"✗ Error initializing agent: {agent_error_message}")
+
 
 # ============================
 # HELPER FUNCTIONS
@@ -251,11 +254,12 @@ def analyze_image():
         
         # Check if agent is initialized
         if agent_executor is None:
+            # Ab hum user ko exact reason bhi batayenge UI me (optional hai, but helpful)
             return jsonify({
-                'error': 'Agent not initialized. Please check GROQ_API_KEY environment variable.'
+                'error': f'Agent failed to start. Reason: {agent_error_message}'
             }), 500
         
-      # Run through LangGraph ReAct agent
+        # Run through LangGraph ReAct agent
         question = f"Analyze this image for deepfake detection: {filepath}"
         
         response = agent_executor.invoke({
@@ -284,12 +288,13 @@ def analyze_image():
 
 @app.route('/health', methods=['GET'])
 def health_check():
-    """Health check endpoint"""
+    """Health check endpoint with exact error reporting"""
     status = {
         'status': 'healthy',
         'model_loaded': cnn_model is not None,
         'agent_initialized': agent_executor is not None,
-        'groq_api_key_set': os.getenv('GROQ_API_KEY') is not None
+        'groq_api_key_set': os.getenv('GROQ_API_KEY') is not None,
+        'exact_error_reason': agent_error_message  
     }
     return jsonify(status)
 
