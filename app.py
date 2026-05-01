@@ -162,71 +162,39 @@ deepfake_tool = Tool(
 # ============================
 # REACT AGENT WITH GROQ
 # ============================
+# ============================
+# REACT AGENT WITH LANGGRAPH & GROQ
+# ============================
 def create_deepfake_agent():
-    """Create and configure the LangChain ReAct agent with Groq"""
+    """Create and configure the LangGraph ReAct agent with Groq"""
     
     # Initialize Groq LLM
-    # NOTE: Set your GROQ_API_KEY environment variable
     llm = ChatGroq(
-        model="llama-3.1-70b-versatile",  # or "mixtral-8x7b-32768"
+        model="llama-3.1-70b-versatile", 
         temperature=0.3,
         max_tokens=1024,
         groq_api_key=os.getenv("GROQ_API_KEY")
     )
     
-    # Define the ReAct prompt template
-    react_prompt = PromptTemplate.from_template(
-        """You are an expert AI assistant specializing in deepfake detection analysis.
+    # Define the System Message (Prompt)
+    system_message = SystemMessage(content="""You are an expert AI assistant specializing in deepfake detection analysis.
 Your role is to help users understand whether an image is authentic or manipulated.
 
-You have access to the following tools:
-
-{tools}
-
-Tool Names: {tool_names}
-
 When analyzing an image:
-1. Use the DeepfakeDetectionTool to get the technical classification
-2. Based on the tool's output, provide a clear, natural language explanation
-3. Explain what deepfakes are and why detection matters
-4. Give context about the confidence level
-5. Provide practical advice on how to spot deepfakes
-
-Use the following format:
-
-Question: the input question you must answer
-Thought: you should always think about what to do
-Action: the action to take, should be one of [{tool_names}]
-Action Input: the input to the action
-Observation: the result of the action
-... (this Thought/Action/Action Input/Observation can repeat N times)
-Thought: I now know the final answer
-Final Answer: the final answer to the original input question
-
-Begin!
-
-Question: {input}
-Thought: {agent_scratchpad}"""
-    )
+1. Use the DeepfakeDetectionTool to get the technical classification.
+2. Based on the tool's output, provide a clear, natural language explanation.
+3. Explain what deepfakes are and why detection matters.
+4. Give context about the confidence level.
+5. Provide practical advice on how to spot deepfakes.""")
     
-    # Create the ReAct agent
-    agent = create_react_agent(
-        llm=llm,
-        tools=[deepfake_tool],
-        prompt=react_prompt
-    )
-    
-    # Create agent executor
-    agent_executor = AgentExecutor(
-        agent=agent,
-        tools=[deepfake_tool],
-        verbose=True,
-        handle_parsing_errors=True,
-        max_iterations=3
+    # Create the ReAct agent using LangGraph
+    agent_executor = create_react_agent(
+        llm, 
+        tools=[deepfake_tool], 
+        state_modifier=system_message
     )
     
     return agent_executor
-
 # Initialize agent
 agent_executor = None
 try:
@@ -286,15 +254,15 @@ def analyze_image():
                 'error': 'Agent not initialized. Please check GROQ_API_KEY environment variable.'
             }), 500
         
-        # Run through ReAct agent
+      # Run through LangGraph ReAct agent
         question = f"Analyze this image for deepfake detection: {filepath}"
         
         response = agent_executor.invoke({
-            "input": question
+            "messages": [HumanMessage(content=question)]
         })
         
-        # Extract the final answer
-        final_answer = response.get('output', 'Unable to generate explanation')
+        # Extract the final answer (the last message in the graph state)
+        final_answer = response["messages"][-1].content
         
         # Clean up uploaded file
         try:
